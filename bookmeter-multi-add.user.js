@@ -1,12 +1,14 @@
 // ==UserScript==
 // @name           bookmeter-multi-add
-// @namespace      amaisaeta.seesaa.net
+// @version        0.9.0.20110810
+// @namespace      http://amaisaeta.seesaa.net/
 // @description    読書メーターの検索画面にて、複数書籍の一括登録の為のUIを用意します。
+// @license        MIT License; http://www.opensource.org/licenses/mit-license.php
 // @include        http://book.akahoshitakuya.com/s*
 // ==/UserScript==
 
 (function() {
-	var DEBUG = 1;	// [DEBUG]
+//	var DEBUG = 1;	// [DEBUG]
 
 	const prefix = 'bookmeter_multi_add_';
 	const checkboxClassName = prefix + 'asin';
