@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           bookmeter-multi-add
-// @version        0.9.0.20110810
+// @version        0.9.1.20110811
 // @namespace      http://amaisaeta.seesaa.net/
 // @description    読書メーターの検索画面にて、複数書籍の一括登録の為のUIを用意します。
 // @license        MIT License; http://www.opensource.org/licenses/mit-license.php
@@ -8,9 +8,14 @@
 // ==/UserScript==
 
 (function() {
-//	var DEBUG = 1;	// [DEBUG]
+	var DEBUG = 1;	// [DEBUG]
 
 	const prefix = 'bookmeter_multi_add_';
+
+	const yearSMName = 'read_date_y';
+	const monthSMName = 'read_date_m';
+	const dateSMName = 'read_date_d';
+
 	const checkboxClassName = prefix + 'asin';
 	const candidatesBlock = document.getElementById('main_left').getElementsByClassName('inner')[0];
 	const results = document.evaluate('*[contains(concat(" ", normalize-space(@class), " "), " book ")]', candidatesBlock, null, 7, null);
@@ -60,7 +65,8 @@
 				LOG('edit query="'+query+'" completed!');
 			}
 		}
-		xhr.setRequestHeader("content-type", "application/x-www-form-urlencoded;charset=UTF-8"); xhr.send(query);
+		xhr.setRequestHeader("content-type", "application/x-www-form-urlencoded;charset=UTF-8");
+		xhr.send(query);
 
 		return 1;
 
@@ -90,9 +96,9 @@
 		LOG("fumei is... " + document.getElementById(prefix + 'fumei').checked);
 
 		if(!document.getElementById(prefix + 'fumei').checked) {
-			var dateY = document.getElementById(prefix + 'read_date_y');
-			var dateM = document.getElementById(prefix + 'read_date_m');
-			var dateD = document.getElementById(prefix + 'read_date_d');
+			var dateY = document.getElementById(prefix + yearSMName);
+			var dateM = document.getElementById(prefix + monthSMName);
+			var dateD = document.getElementById(prefix + dateSMName);
 
 			LOG('dateY:' + dateY.selectedIndex + ' ' + dateY.options[dateY.selectedIndex].value);
 			LOG('dateM:' + dateM.selectedIndex + ' ' + dateM.options[dateM.selectedIndex].value);
@@ -125,15 +131,15 @@
 	function addSubmitForm() { // {{{
 		const now = new Date();
 
-		var readY = createSelect('read_date_y', 10, function(i) {
+		var readY = createSelect(yearSMName, 10, function(i) {
 			var y = (new Date()).getFullYear() - i;
 			return { value: y, text: y + '年' };
 		});
-		var readM = createSelect('read_date_m', 12, function(i) {
+		var readM = createSelect(monthSMName, 12, function(i) {
 			i += 1;
 			return { value: str_w(i, 2), text: i + '月' };
 		});
-		var readD = createSelect('read_date_d', 31, function(i) {
+		var readD = createSelect(dateSMName, 31, function(i) {
 			i += 1;
 			return { value: str_w(i, 2), text: i + '日' };
 		});
@@ -144,8 +150,6 @@
 
 		var form = document.createElement('form');
 		form.id = prefix + 'form';
-//		form.action = '/b';
-//		form.method = 'POST';
 		form.addEventListener('submit', registerBooks, true);
 
 		var fs = document.createElement('fieldset');
