@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           bookmeter-multi-add
-// @version        0.9.1.20110811
+// @version        0.9.2.20110811
 // @namespace      http://amaisaeta.seesaa.net/
 // @description    読書メーターの検索画面にて、複数書籍の一括登録の為のUIを用意します。
 // @license        MIT License; http://www.opensource.org/licenses/mit-license.php
@@ -8,7 +8,7 @@
 // ==/UserScript==
 
 (function() {
-	var DEBUG = 1;	// [DEBUG]
+//	var DEBUG = 1;	// [DEBUG]
 
 	const prefix = 'bookmeter_multi_add_';
 
@@ -25,48 +25,48 @@
 			+ (date ? date.getFullYear()+'/'+date.getMonth()+'/'+date.getDate() : 'NULL')
 			+'),"'+category+'")');
 
-		var xhr = new XMLHttpRequest();
-		var succeededAdd = false;
-		var url, query;
-		var pageDoc;
-
 		// add
-		url = '/add.php?asin=' + asin;
+		var xhr = new XMLHttpRequest();
+		var url = '/add.php?asin=' + asin;
+
 		LOG('add: url: ' + url);
-		xhr.open('GET', url, false);
-		xhr.onreadystatechange = function() {
-			if(xhr.readyState == 4/*complete*/ && xhr.status == 200) {
-				succeededAdd = true;
+		xhr.open('GET', url, true);
+		xhr.onreadystatechange = function(event) {
+			const my = event.target;
+
+			if(my.readyState == 4/*complete*/ && my.status == 200) {
 				LOG('add asin='+asin+' completed!');
+
+				// edit
+				var xhr = new XMLHttpRequest();
+				var url = '/b';
+				var query;
+
+				if(date) {
+					query = 'read_date_y=' + date.getFullYear()
+						+ '&read_date_m=' + str_w(date.getMonth(), 2)
+						+ '&read_date_d=' + str_w(date.getDate(), 2);
+				} else {
+					query = 'fumei=1';
+				}
+				query += '&comment=';
+				if((typeof category) === 'string' && category.length > 0) {
+					query += '&category=' + encodeURI(category);
+				}
+				query += '&category_pre=&asin=' + asin;
+				query += '&edit_no=' + getEditNo(asin);
+				xhr.open('POST', url, true);
+				xhr.setRequestHeader("content-type", "application/x-www-form-urlencoded;charset=UTF-8");
+				LOG('edit: url: ' + url + '\nquery: ' + query);
+				xhr.onreadystatechange = function() {
+					if(xhr.readyState == 4/*complete*/ && xhr.status == 200) {
+						LOG('edit query="'+query+'" completed!');
+					}
+				}
+				xhr.send(query);
 			}
 		}
 		xhr.send(null);
-
-		if(!succeededAdd) { return 0; }
-
-		// edit information
-		xhr = new XMLHttpRequest();
-		url = '/b';
-		if(date) {
-			query = 'read_date_y=' + date.getFullYear() + '&read_date_m=' + str_w(date.getMonth(), 2) + '&read_date_d=' + str_w(date.getDate(), 2);
-		} else {
-			query = 'fumei=1';
-		}
-		query += '&comment=';
-		if((typeof category) === 'string' && category.length > 0) {
-			query += '&category=' + encodeURI(category);
-		}
-		query += '&category_pre=&asin=' + asin;
-		query += '&edit_no=' + getEditNo(asin);
-		xhr.open('POST', url, false);
-		LOG('edit: url: ' + url + '\nquery: ' + query);
-		xhr.onreadystatechange = function() {
-			if(xhr.readyState == 4/*complete*/ && xhr.status == 200) {
-				LOG('edit query="'+query+'" completed!');
-			}
-		}
-		xhr.setRequestHeader("content-type", "application/x-www-form-urlencoded;charset=UTF-8");
-		xhr.send(query);
 
 		return 1;
 
@@ -122,9 +122,9 @@
 				if(!registerBook(item.value, date, category)) {
 					LOG('failed: ' + item.value);
 				}
+				LOG('remain: ' + (results.snapshotLength - i) + ' / ' + results.snapshotLength);
 			}
 		}
-		alert("completed!");
 		event.preventDefault();
 	}
 
