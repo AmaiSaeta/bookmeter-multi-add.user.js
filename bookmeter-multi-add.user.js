@@ -16,8 +16,13 @@
 	const monthSMName = 'read_date_m';
 	const dateSMName = 'read_date_d';
 
-	const checkboxClassName = prefix + 'asin';
-	const results = document.getElementById('main_left').getElementsByClassName('book');
+	const checkboxName = 'asin';
+	const unknownName = 'fumei';
+	const categoryName = 'category';
+	const editNoName = 'edit_no';
+	const checkboxClassName = prefix + checkboxName;
+	const unknownClassName = prefix + unknownName;
+	const categoryClassName = prefix + categoryName;
 
 	var remainCounterElem;
 	function updateRemainCounter(num) {
@@ -52,18 +57,18 @@
 				var query;
 
 				if(date) {
-					query = 'read_date_y=' + date.getFullYear()
-						+ '&read_date_m=' + str_w(date.getMonth(), 2)
-						+ '&read_date_d=' + str_w(date.getDate(), 2);
+					query = yearSMName + '=' + date.getFullYear()
+						+ '&' + monthSMName + '=' + str_w(date.getMonth(), 2)
+						+ '&' + dateSMName + '=' + str_w(date.getDate(), 2);
 				} else {
-					query = 'fumei=1';
+					query = unknownName + '=1';
 				}
 				query += '&comment=';
 				if((typeof category) === 'string' && category.length > 0) {
-					query += '&category=' + encodeURI(category);
+					query += '&' + categoryName + '=' + encodeURI(category);
 				}
 				query += '&category_pre=&asin=' + asin;
-				query += '&edit_no=' + getEditNo(asin);
+				query += '&' + editNoName + '=' + getEditNo(asin);
 				xhr.open('POST', url, true);
 				xhr.setRequestHeader("content-type", "application/x-www-form-urlencoded;charset=UTF-8");
 				LOG('edit: url: ' + url + '\nquery: ' + query);
@@ -107,13 +112,13 @@
 	function registerBooks(event) {
 		LOG("in registerBooks()");
 
-		var checks = getCheckElems(results);
+		var checks = getCheckElems(document.getElementById('main_left').getElementsByClassName('book'));
 		remainNum = checks.length;
 		var date = null;
 
-		LOG("fumei is... " + document.getElementById(prefix + 'fumei').checked);
+		LOG("fumei is... " + document.getElementById(unknownClassName).checked);
 
-		if(!document.getElementById(prefix + 'fumei').checked) {
+		if(!document.getElementById(unknownClassName).checked) {
 			var dateY = document.getElementById(prefix + yearSMName);
 			var dateM = document.getElementById(prefix + monthSMName);
 			var dateD = document.getElementById(prefix + dateSMName);
@@ -128,7 +133,7 @@
 				dateD.options[dateD.selectedIndex].value
 			);
 		}
-		var category = document.getElementById(prefix + 'category').value;
+		var category = document.getElementById(categoryClassName).value;
 
 		LOG('category: ' + category);
 
@@ -153,12 +158,10 @@
 
 		// co-functions {{{
 		function getCheckElems(elems) {
-			LOG('in getCheckElems(' + (typeof elems) + (typeof elems === 'Array' ? '['+elem.length+']':'') + ')');
+			LOG('in getCheckElems( [' + (typeof elems.length ? elems.length : '') + '] )');
 
 			var res = [];
 			for(var i = 0; i < elems.length; ++i) {
-				// [TODO] Autopagerizeで読み込んだ部分にはcheckboxが付与されていないので、そのチェックを行っている。
-				// [TODO] Autopagerize対応は次更新時に行う予定である
 				var e = elems[i].getElementsByClassName(checkboxClassName);
 				if((e.length != 0) && e[0].checked) {
 					res.push(elems[i]);
@@ -186,8 +189,8 @@
 			i += 1;
 			return { value: str_w(i, 2), text: i + '日' };
 		});
-		var readUnknown = createInput('checkbox', 'fumei', '1');
-		var category = createInput('text', 'category', '');
+		var readUnknown = createInput('checkbox', unknownName, '1');
+		var category = createInput('text', categoryName, '');
 		var submit = createInput('submit', '', '一括追加');
 		submit.className += ' submit';
 
@@ -247,36 +250,30 @@
 			}
 			return select;
 		}
-		function createInput(type, name, value) {
-			var elem = document.createElement('input');
-			elem.type = type;
-			elem.name = name;
-			elem.id = prefix + name
-			elem.value = value;
-			return elem;
-		}
 		// }}} co-functions
 	}	// }}}
 
-	function addCheckboxies() {	// {{{
-		LOG('in addCheckboxies()');
+	function addCheckbox(elem) {	// {{{
+		LOG('in addCheckbox(e)');
 
-		for(var i = 0; i < results.length; ++i) {
-			var checkbox = document.createElement('input');
-			checkbox.type = 'checkbox';
-			checkbox.className = checkboxClassName;
-			checkbox.name = checkboxClassName;
-			checkbox.value = results[i].getElementsByTagName('a')[0].href.match(/[0-9a-zA-Z]+$/);
-			checkbox.addEventListener('click', function(event) {
-				LOG('in checkbox.onclick handler');
-				const remainNum = getRemainNum();
-				var m = event.target.checked ? 1 : -1;
-				updateRemainCounter(remainNum + m);
-				enableSubmitButton(remainNum > 0);
-			}, false);
-			results[i].appendChild(checkbox);
+		var checkbox = elem.appendChild(createInput('checkbox', checkboxName, elem.getElementsByTagName('a')[0].href.match(/[0-9a-zA-Z]+$/)));
+		checkbox.removeAttribute('id');
+		checkbox.className = checkboxClassName;
+		checkbox.addEventListener('click', function(event) {
+			LOG('in checkbox.onclick handler');
+			const remainNum = getRemainNum();
+			var m = event.target.checked ? 1 : -1;
+			updateRemainCounter(remainNum + m);
+		}, false);
+	}	// }}}
 
-		}
+	function createInput(type, name, value) {	// {{{
+		var elem = document.createElement('input');
+		elem.type = type;
+		elem.name = name;
+		elem.id = prefix + name;
+		elem.value = value;
+		return elem;
 	}	// }}}
 
 	function str_w(src, w) { // {{{
@@ -289,7 +286,10 @@
 		parent.insertBefore(node, referenceNode.nextSibling);
 	}	// }}}
 
-	addCheckboxies();
+	for(var candidateElems = document.getElementById('main_left').getElementsByClassName('book'), i = 0; i < candidateElems.length; ++i) {
+		addCheckbox(candidateElems[i]);
+	}
+	window.addEventListener('AutoPagerize_DOMNodeInserted', function(event) { addCheckbox(event.target); }, false);
 	addSubmitForm();
 
 
