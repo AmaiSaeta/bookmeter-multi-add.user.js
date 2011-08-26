@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           bookmeter-multi-add
-// @version        0.9.3.20110817
+// @version        1.00.20110827
 // @namespace      http://amaisaeta.seesaa.net/
 // @description    読書メーターの検索画面にて、複数書籍の一括登録の為のUIを用意します。
 // @license        MIT License; http://www.opensource.org/licenses/mit-license.php
@@ -10,6 +10,7 @@
 (function() {
 //	var DEBUG = 1;	// [DEBUG]
 
+	// const variables {{{
 	const prefix = 'bookmeter_multi_add_';
 
 	const yearSMName = 'read_date_y';
@@ -20,9 +21,18 @@
 	const unknownName = 'fumei';
 	const categoryName = 'category';
 	const editNoName = 'edit_no';
+	const submitName = 'submit';
+
 	const checkboxClassName = prefix + checkboxName;
-	const unknownClassName = prefix + unknownName;
-	const categoryClassName = prefix + categoryName;
+	const unknownId = prefix + unknownName;
+	const categoryId = prefix + categoryName;
+	const yearSMId = prefix + yearSMName;
+	const monthSMId = prefix + monthSMName;
+	const dateSMId = prefix + dateSMName;
+	const submitId = prefix + submitName;
+	// }}} const variables
+
+	var submitButtonElem;
 
 	var remainCounterElem;
 	function updateRemainCounter(num) {
@@ -65,7 +75,7 @@
 				}
 				query += '&comment=';
 				if((typeof category) === 'string' && category.length > 0) {
-					query += '&' + categoryName + '=' + encodeURI(category);
+					query += '&' + categoryName + '=' + encodeURIComponent(category);
 				}
 				query += '&category_pre=&asin=' + asin;
 				query += '&' + editNoName + '=' + getEditNo(asin);
@@ -81,7 +91,7 @@
 							LOG('edit query="'+query+'" failed!');
 						}
 						updateRemainCounter(remainNum - 1);
-						LOG("remain: " + remainNum - 1);
+						LOG("remain: " + (remainNum - 1));
 					}
 				}
 				xhr.send(query);
@@ -116,9 +126,12 @@
 		remainNum = checks.length;
 		var date = null;
 
-		LOG("fumei is... " + document.getElementById(unknownClassName).checked);
+		submitButtonElem.setAttribute('disabled', 'disabled');
+		submitButtonElem.setAttribute('value', '登録中');
 
-		if(!document.getElementById(unknownClassName).checked) {
+		LOG("fumei is... " + document.getElementById(unknownId).checked);
+
+		if(!document.getElementById(unknownId).checked) {
 			var dateY = document.getElementById(prefix + yearSMName);
 			var dateM = document.getElementById(prefix + monthSMName);
 			var dateD = document.getElementById(prefix + dateSMName);
@@ -133,7 +146,7 @@
 				dateD.options[dateD.selectedIndex].value
 			);
 		}
-		var category = document.getElementById(categoryClassName).value;
+		var category = document.getElementById(categoryId).value;
 
 		LOG('category: ' + category);
 
@@ -148,9 +161,12 @@
 
 		// 全完了時通知
 		var completeCheckerTID = setInterval(function() {
-			if(remainNum <= 0) {
+			LOG('in completeChecker [setInterval]');
+			if(getRemainNum() <= 0) {
 				clearInterval(completeCheckerTID);
-				alert('complate!');
+				clearUIValue();
+				alert('complete!');
+				LOG('all complete!')
 			}
 		}, 100);
 
@@ -190,9 +206,17 @@
 			return { value: str_w(i, 2), text: i + '日' };
 		});
 		var readUnknown = createInput('checkbox', unknownName, '1');
+		readUnknown.addEventListener('click', let(y=readY, m=readM, d=readD) function(event) {
+			const toEnabled = (!event.target.checked);
+			switchDisabled(y, toEnabled);
+			switchDisabled(m, toEnabled);
+			switchDisabled(d, toEnabled);
+
+			function switchDisabled(elem, flag) { elem.disabled = (flag ? (void 0) : 'disabled'); }
+		}, false);
 		var category = createInput('text', categoryName, '');
-		var submit = createInput('submit', '', '一括追加');
-		submit.className += ' submit';
+		submitButtonElem = createInput('submit', submitName, '');
+		submitButtonElem.className += ' submit';
 
 		var form = document.createElement('form');
 		form.id = prefix + 'form';
@@ -213,7 +237,7 @@
 		form.appendChild(fs);
 
 		fs = document.createElement('fieldset');
-		fs.appendChild(submit);
+		fs.appendChild(submitButtonElem);
 		fs.appendChild((function() {
 			var parent = document.createElement('dl');
 			var head = parent.appendChild(document.createElement('dt'));
@@ -235,6 +259,11 @@
 		var pos = document.getElementById('main_left').getElementsByClassName('inner')[0];
 		pos.parentNode.insertBefore(block, pos);
 		//insertAfter(pos.parentNode, block, pos);
+
+		submitButtonElem.setAttribute('disabled', 'disabled');
+		submitButtonElem.setAttribute('value', '選択してください');
+
+		setDateMenu2Now();
 
 		// co-functions {{{
 		function createSelect(name, num, func) {
@@ -262,9 +291,25 @@
 		checkbox.addEventListener('click', function(event) {
 			LOG('in checkbox.onclick handler');
 			const remainNum = getRemainNum();
-			var m = event.target.checked ? 1 : -1;
-			updateRemainCounter(remainNum + m);
+			var newNum = remainNum + (event.target.checked ? 1 : -1);
+			updateRemainCounter(newNum);
+			if(newNum > 0) {
+				submitButtonElem.removeAttribute('disabled');
+				submitButtonElem.setAttribute('value', '一括登録');
+			} else {
+				submitButtonElem.setAttribute('disabled', 'disabled');
+				submitButtonElem.setAttribute('value', '選択してください');
+			}
 		}, false);
+	}	// }}}
+
+	function addOriginStyles() {	// {{{
+		LOG('in addOriginStyles()');
+
+		var style = document.getElementsByTagName('head')[0].appendChild(document.createElement('style'));
+		style.type = 'text/css';
+		style.title = 'for bookmeter-multi-add.user.js';
+		style.sheet.insertRule('#' + submitId + '[disabled] { background-color: lightgray; color: black; }', 0);
 	}	// }}}
 
 	function createInput(type, name, value) {	// {{{
@@ -274,6 +319,39 @@
 		elem.id = prefix + name;
 		elem.value = value;
 		return elem;
+	}	// }}}
+
+	function clearUIValue() {	// {{{
+		LOG('in clearUIValue()');
+
+		var checkboxies = document.getElementsByClassName(checkboxClassName);
+		for(var i = 0; i < checkboxies.length; ++i) {
+			checkboxies[i].checked = false
+		}
+		document.getElementById(unknownId).checked = false;
+		//document.getElementById(categoryId).setAttribute('value', '');
+		document.getElementById(categoryId).value =  '';
+		setDateMenu2Now();
+		submitButtonElem.setAttribute('disabled', 'disabled');
+		submitButtonElem.setAttribute('value', '選択してください');
+		updateRemainCounter(0);
+	}	// }}}
+
+	function setDateMenu2Now() {	// {{{
+		LOG('in setDateMenu2Now()');
+
+		const now = new Date();
+		setSelected(document.getElementById(yearSMId), now.getFullYear());
+		setSelected(document.getElementById(monthSMId), now.getMonth()+1);	// Dateの月数は0オリジン
+		setSelected(document.getElementById(dateSMId), now.getDate());
+
+		function setSelected(selectElem, value) {
+			var elem = selectElem.firstChild;
+			selectElem.disabled = false;
+			do {
+				elem.selected = (Number(elem.value)==value ? 'selected' : void 0);
+			} while(elem = elem.nextSibling);
+		}
 	}	// }}}
 
 	function str_w(src, w) { // {{{
@@ -286,11 +364,14 @@
 		parent.insertBefore(node, referenceNode.nextSibling);
 	}	// }}}
 
-	for(var candidateElems = document.getElementById('main_left').getElementsByClassName('book'), i = 0; i < candidateElems.length; ++i) {
+	var candidateElems = document.getElementById('main_left').getElementsByClassName('book');
+	if(candidateElems.length == 0) return;	// 検索結果0
+	addOriginStyles();
+	addSubmitForm();
+	for(var i = 0; i < candidateElems.length; ++i) {
 		addCheckbox(candidateElems[i]);
 	}
 	window.addEventListener('AutoPagerize_DOMNodeInserted', function(event) { addCheckbox(event.target); }, false);
-	addSubmitForm();
 
 
 // for debug time {{{
