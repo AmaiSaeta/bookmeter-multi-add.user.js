@@ -206,11 +206,11 @@
 			return { value: str_w(i, 2), text: i + '日' };
 		});
 		var readUnknown = createInput('checkbox', unknownName, '1');
-		readUnknown.addEventListener('click', let(y=readY, m=readM, d=readD) function(event) {
+		readUnknown.addEventListener('click', function(event) {
 			const toEnabled = (!event.target.checked);
-			switchDisabled(y, toEnabled);
-			switchDisabled(m, toEnabled);
-			switchDisabled(d, toEnabled);
+			switchDisabled(readY, toEnabled);
+			switchDisabled(readM, toEnabled);
+			switchDisabled(readD ,toEnabled);
 
 			function switchDisabled(elem, flag) { elem.disabled = (flag ? (void 0) : 'disabled'); }
 		}, false);
