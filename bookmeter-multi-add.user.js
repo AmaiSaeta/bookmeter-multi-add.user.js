@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           bookmeter-multi-add
-// @version        1.00.20110827
+// @version        1.03.20151226
 // @namespace      http://amaisaeta.seesaa.net/
 // @description    読書メーターの検索画面にて、複数書籍の一括登録の為のUIを用意します。
 // @license        MIT License; http://www.opensource.org/licenses/mit-license.php
