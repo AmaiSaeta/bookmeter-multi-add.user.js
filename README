@@ -3,11 +3,11 @@ bookmeter-multi-add.user.js
 
 これは何?
 ---------
-[読書メーター](http://book.akahoshitakuya.com/)の検索結果一覧から、複数書籍の一括登録を行うGreasemonkeyスクリプト。
+[読書メーター](http://bookmeter.com/)の検索結果一覧から、複数書籍の一括登録を行うGreasemonkeyスクリプト。
 
 以下の環境で動作する事を確認しました。
-*Mozilla Firefox 5.0
-*Greasemonkey 0.9.8
+*Mozilla Firefox 42.0
+*Greasemonkey 3.6
 
 license
 -------
